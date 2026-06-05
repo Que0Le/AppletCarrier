@@ -1,5 +1,6 @@
 package com.example.applet_carrier
 
+import com.example.applet_carrier.applets.findport.FindProcessByPortApplet
 import com.example.applet_carrier.applets.hello.HelloApplet
 import com.example.applet_carrier.applets.list.ListApplet
 import com.example.applet_carrier.core.AppletHost
@@ -24,6 +25,7 @@ object CarrierBootstrap {
             listOf(
                 HelloApplet(),
                 ListApplet(),
+                FindProcessByPortApplet(),
             ),
         )
         val storeFactory = DesktopStoreFactory()

@@ -35,21 +35,29 @@ fun ToolButton(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    tint: Color? = null,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val hovered by interaction.collectIsHoveredAsState()
+    val baseColor = tint ?: CarrierColors.TextMuted
+    val activeColor = tint ?: CarrierColors.TextPrimary
     Box(
         modifier
             .clip(RoundedCornerShape(CarrierDimens.radiusSmall))
-            .background(if (hovered) CarrierColors.HoverOverlay else Color.Transparent)
-            .hoverable(interaction)
-            .clickable(onClick = onClick)
+            .background(if (hovered && enabled) CarrierColors.HoverOverlay else Color.Transparent)
+            .hoverable(interaction, enabled = enabled)
+            .clickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = CarrierDimens.gapMd, vertical = CarrierDimens.gapSm),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             label,
-            color = if (hovered) CarrierColors.TextPrimary else CarrierColors.TextMuted,
+            color = when {
+                !enabled -> CarrierColors.TextMuted.copy(alpha = 0.4f)
+                hovered -> activeColor
+                else -> baseColor
+            },
             fontSize = CarrierFontSizes.body,
         )
     }

@@ -21,6 +21,7 @@ kotlin {
         }
         jvmMain.dependencies {
             implementation(libs.kotlinx.serializationJson)
+            implementation(libs.kotlinx.coroutinesCore)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

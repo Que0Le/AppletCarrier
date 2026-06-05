@@ -30,4 +30,7 @@ object CarrierColors {
 
     // Demo color for the Hello applet's toggled state.
     val Green = Color(0xFF4FB06A)
+
+    // Desaturated red for destructive actions (e.g. kill). Restrained, not bright.
+    val Danger = Color(0xFFD16F6F)
 }
