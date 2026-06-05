@@ -97,6 +97,23 @@ Notes:
 - The published `.exe` is **unsigned** (expect a Windows SmartScreen prompt on download);
   code signing would need a certificate stored in repository secrets.
 
+#### Running a downloaded build (Windows SmartScreen)
+
+The released `.exe` is **unsigned**, so Windows tags the downloaded zip with the "Mark of
+the Web" and SmartScreen shows a *"Windows protected your PC"* prompt on first run. The
+free way to avoid it:
+
+1. Right-click the downloaded `AppletCarrier-<version>.zip` → **Properties**.
+2. Tick **Unblock** (bottom of the dialog) → **OK**.
+3. **Then** extract the zip and run `AppletCarrier.exe`.
+
+Unblocking before extracting strips the Mark of the Web from every extracted file, so no
+SmartScreen prompt appears. (If you forget, you can still click **More info → Run anyway**
+on the prompt.) Verify the download with the published SHA-256 checksum if provided.
+
+> Removing the prompt entirely requires code signing (e.g. Azure Trusted Signing) — planned
+> for later, not yet configured.
+
 #### Single standalone .exe
 
 There is no `jpackage` option for a single self-contained `.exe` — a JVM app always needs
