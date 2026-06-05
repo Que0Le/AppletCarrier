@@ -30,6 +30,9 @@ private val CarrierFont = FontFamily.SansSerif
 
 private val CarrierTypography = Typography().run {
     copy(
+        // bodyLarge is what Material3 text fields use for input + placeholder text; the
+        // default 16sp looks oversized in this compact UI, so bring it down to 13sp.
+        bodyLarge = bodyLarge.copy(fontFamily = CarrierFont, fontSize = 13.sp, fontWeight = FontWeight.Normal),
         bodyMedium = bodyMedium.copy(fontFamily = CarrierFont, fontSize = 13.sp, fontWeight = FontWeight.Normal),
         bodySmall = bodySmall.copy(fontFamily = CarrierFont, fontSize = 11.sp),
         labelLarge = labelLarge.copy(fontFamily = CarrierFont, fontSize = 13.sp, fontWeight = FontWeight.Medium),

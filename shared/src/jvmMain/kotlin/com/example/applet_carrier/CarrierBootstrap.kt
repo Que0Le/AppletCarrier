@@ -4,6 +4,7 @@ import com.example.applet_carrier.applets.findport.FindProcessByPortApplet
 import com.example.applet_carrier.applets.hello.HelloApplet
 import com.example.applet_carrier.applets.list.ListApplet
 import com.example.applet_carrier.applets.timestamp.TimestampApplet
+import com.example.applet_carrier.applets.tokengen.TokenGeneratorApplet
 import com.example.applet_carrier.core.AppletHost
 import com.example.applet_carrier.core.AppletRegistry
 import com.example.applet_carrier.platform.DesktopStoreFactory
@@ -28,6 +29,7 @@ object CarrierBootstrap {
                 ListApplet(),
                 FindProcessByPortApplet(),
                 TimestampApplet(),
+                TokenGeneratorApplet(),
             ),
         )
         val storeFactory = DesktopStoreFactory()
