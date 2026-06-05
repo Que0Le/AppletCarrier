@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
@@ -34,6 +35,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -142,8 +144,11 @@ class WifiQrApplet : Applet() {
             }
             Spacer(Modifier.height(CarrierDimens.gapXs))
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(checked = hidden, onCheckedChange = { hidden = it })
+            Row(
+                Modifier.toggleable(value = hidden, onValueChange = { hidden = it }, role = Role.Checkbox),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(checked = hidden, onCheckedChange = null)
                 Text("Hidden network", color = CarrierColors.TextPrimary, fontSize = CarrierFontSizes.secondary)
             }
             Spacer(Modifier.height(CarrierDimens.gapMd))
