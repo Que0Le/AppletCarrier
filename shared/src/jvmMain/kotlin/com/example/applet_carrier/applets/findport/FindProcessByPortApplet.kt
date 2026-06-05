@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
@@ -20,7 +21,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,6 +33,7 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.applet_carrier.api.Applet
@@ -45,7 +46,7 @@ import com.example.applet_carrier.ui.components.ToolButton
 import com.example.applet_carrier.ui.theme.CarrierColors
 import com.example.applet_carrier.ui.theme.CarrierDimens
 import com.example.applet_carrier.ui.theme.CarrierFontSizes
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.Instant
@@ -53,9 +54,9 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 /**
- * Find which process owns a TCP/UDP port. Type a port → after a short debounce the applet
- * runs the lookup off the UI thread and lists each owning process with full details, plus
- * Copy-PID and Kill (with confirm + elevation fallback) actions.
+ * Find which process owns a TCP/UDP port. Enter a port and press Enter (or the Search
+ * button) → the lookup runs off the UI thread and lists each owning process with full
+ * details, plus Copy-PID and Kill (with confirm + elevation fallback) actions.
  *
  * Lives in jvmMain because it needs OS process APIs (AGENTS.md "platform applet" pattern).
  */
@@ -90,21 +91,22 @@ class FindProcessByPortApplet : Applet() {
         var results by remember { mutableStateOf<List<ProcessResult>>(emptyList()) }
         var status by remember { mutableStateOf<SearchStatus>(SearchStatus.Idle) }
         var actionStatus by remember { mutableStateOf<String?>(null) }
+        var searchJob by remember { mutableStateOf<Job?>(null) }
 
-        // Debounced lookup: re-keyed on every keystroke, so the previous delay+search is
-        // cancelled automatically — that's the "bouncer".
-        LaunchedEffect(portText) {
-            lastPort = portText
+        // Manual search — triggered by the Search button or Enter while the field is focused.
+        fun triggerSearch() {
             val port = portText.trim().toIntOrNull()
             when {
                 portText.isBlank() -> { results = emptyList(); status = SearchStatus.Idle }
                 port == null || port !in 1..65535 -> { results = emptyList(); status = SearchStatus.Invalid }
                 else -> {
-                    delay(400)
-                    status = SearchStatus.Searching
-                    val found = PortProcessLookup.find(port)
-                    results = found
-                    status = if (found.isEmpty()) SearchStatus.Empty(port) else SearchStatus.Found(port)
+                    searchJob?.cancel()
+                    searchJob = scope.launch {
+                        status = SearchStatus.Searching
+                        val found = PortProcessLookup.find(port)
+                        results = found
+                        status = if (found.isEmpty()) SearchStatus.Empty(port) else SearchStatus.Found(port)
+                    }
                 }
             }
         }
@@ -149,14 +151,30 @@ class FindProcessByPortApplet : Applet() {
             )
             Spacer(Modifier.height(CarrierDimens.gapMd))
 
-            OutlinedTextField(
-                value = portText,
-                onValueChange = { new -> if (new.all(Char::isDigit) && new.length <= 5) portText = new },
-                label = { Text("Port") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.width(200.dp),
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    value = portText,
+                    onValueChange = { new ->
+                        if (new.all(Char::isDigit) && new.length <= 5) {
+                            portText = new
+                            lastPort = new
+                            // Results no longer match the edited port until re-run.
+                            results = emptyList()
+                            status = SearchStatus.Idle
+                        }
+                    },
+                    label = { Text("Port") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Search,
+                    ),
+                    keyboardActions = KeyboardActions(onSearch = { triggerSearch() }),
+                    modifier = Modifier.width(200.dp),
+                )
+                Spacer(Modifier.width(CarrierDimens.gapSm))
+                ToolButton(label = "Search", onClick = { triggerSearch() }, tint = CarrierColors.Accent)
+            }
 
             Spacer(Modifier.height(CarrierDimens.gapSm))
             StatusLine(status)
@@ -192,7 +210,7 @@ private sealed interface SearchStatus {
 @Composable
 private fun StatusLine(status: SearchStatus) {
     when (status) {
-        SearchStatus.Idle -> Hint("Enter a port number (1–65535) to find the owning process.")
+        SearchStatus.Idle -> Hint("Enter a port number (1–65535), then press Enter or click Search.")
         SearchStatus.Invalid -> Hint("Port must be a number between 1 and 65535.")
         SearchStatus.Searching -> Row(verticalAlignment = Alignment.CenterVertically) {
             CircularProgressIndicator(
