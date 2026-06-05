@@ -26,3 +26,22 @@ compose.desktop {
         }
     }
 }
+
+/**
+ * Convenience task: builds the standalone app image (AppletCarrier.exe + bundled runtime,
+ * no installer, no Java needed on the target). Run it from IntelliJ's Gradle tool window
+ * under "applet_carrier > desktopApp > Tasks > distribution > buildAppImage", or via
+ * `gradlew :desktopApp:buildAppImage`.
+ */
+tasks.register("buildAppImage") {
+    group = "distribution"
+    description = "Builds the standalone AppletCarrier.exe app image (folder with bundled runtime)."
+    dependsOn("createDistributable")
+    // Resolve to a plain File at configuration time so the doLast closure stays
+    // configuration-cache friendly (no script-object references captured).
+    val appDir = layout.buildDirectory.dir("compose/binaries/main/app/AppletCarrier").get().asFile
+    doLast {
+        println("App image ready -> $appDir")
+        println("Run AppletCarrier.exe in that folder, or zip the folder to share it.")
+    }
+}

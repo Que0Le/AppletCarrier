@@ -24,6 +24,65 @@ Use the run button in your IDE's editor gutter, or run tests using Gradle tasks:
 
 - Desktop tests: `./gradlew :shared:jvmTest`
 
+### Build and distribution
+
+The app is packaged with the Compose Desktop plugin (which wraps the JDK's `jpackage`).
+
+> **`JAVA_HOME` (CLI only).** Packaging needs a JDK with `jpackage`. When running from
+> IntelliJ the configured Gradle JVM is used automatically. From the command line on this
+> machine, set it first:
+> ```powershell
+> $env:JAVA_HOME = "C:\Users\winde\.jdks\jbrsdk_jcef-21.0.11"
+> ```
+
+#### Standalone app image (recommended — no installer, no Java needed)
+
+```
+./gradlew :desktopApp:buildAppImage
+```
+
+`buildAppImage` is a convenience task (defined in `desktopApp/build.gradle.kts`) that wraps
+`createDistributable`. In IntelliJ, run it from the Gradle tool window under
+**desktopApp → Tasks → distribution → buildAppImage**.
+
+Output:
+
+```
+desktopApp/build/compose/binaries/main/app/AppletCarrier/
+├── AppletCarrier.exe   ← double-click to start
+├── runtime/            ← bundled Java runtime (no JDK/JRE required on the target)
+└── app/                ← compiled code + libraries
+```
+
+The folder is fully self-contained and portable — copy or **zip the whole `AppletCarrier`
+folder** to share it. The three items must stay together (the `.exe` finds its sibling
+`runtime/` and `app/`). Note: it lives under `build/`, so it is regenerated on each run and
+removed by `./gradlew clean`.
+
+A smaller, ProGuard-minified variant:
+
+```
+./gradlew :desktopApp:createReleaseDistributable   # → build/compose/binaries/main-release/app/AppletCarrier/
+```
+
+#### Installers (single file, but require WiX)
+
+`jpackage` builds Windows installers via the [WiX Toolset v3](https://wixtoolset.org/),
+which must be installed and on `PATH`:
+
+```
+./gradlew :desktopApp:packageMsi   # → build/compose/binaries/main/msi/*.msi
+./gradlew :desktopApp:packageExe   # → build/compose/binaries/main/exe/*.exe
+```
+
+#### Single standalone .exe
+
+There is no `jpackage` option for a single self-contained `.exe` — a JVM app always needs
+its runtime. To collapse the app-image folder into one file, run it through a bundler such
+as **Enigma Virtual Box** (boxes `AppletCarrier.exe` + `runtime/` + `app/` into one ~120 MB
+exe that runs without extracting). GraalVM native-image is not viable here (Compose
+relies on Skiko/AWT).
+
 ---
 
 Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
