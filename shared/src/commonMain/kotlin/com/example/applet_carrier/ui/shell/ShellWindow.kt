@@ -23,11 +23,12 @@ import com.example.applet_carrier.ui.theme.CarrierDimens
 fun ShellRoot(
     host: AppletHost,
     dialogHost: DialogHost,
+    version: String,
     onOpenPrefs: () -> Unit,
 ) {
     Box(Modifier.fillMaxSize().background(CarrierColors.Background)) {
         Column(Modifier.fillMaxSize()) {
-            TopBar(title = "applet_carrier", onOpenPrefs = onOpenPrefs)
+            TopBar(title = "applet_carrier", version = version, onOpenPrefs = onOpenPrefs)
             Row(Modifier.fillMaxSize()) {
                 AppletSidebar(
                     host,

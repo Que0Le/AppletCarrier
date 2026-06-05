@@ -28,6 +28,29 @@ compose.desktop {
 }
 
 /**
+ * Version stamping. Writes the app version into a properties file that is bundled as a
+ * classpath resource and read at startup by `AppVersion`. Pass `-PappVersion=1.2.3`
+ * (the release workflow derives this from the `release_*` tag); defaults to "dev" locally.
+ * Note: this is separate from jpackage's `packageVersion`, which stays fixed.
+ */
+val appVersion: String = (findProperty("appVersion") as String?)?.takeIf { it.isNotBlank() } ?: "dev"
+
+val generateVersionProperties = tasks.register("generateVersionProperties") {
+    val outFile = layout.buildDirectory.file("generated/version/version.properties").get().asFile
+    val versionValue = appVersion
+    inputs.property("version", versionValue)
+    outputs.file(outFile)
+    doLast {
+        outFile.parentFile.mkdirs()
+        outFile.writeText("version=$versionValue\n")
+    }
+}
+
+sourceSets["main"].resources.srcDir(layout.buildDirectory.dir("generated/version"))
+
+tasks.named("processResources") { dependsOn(generateVersionProperties) }
+
+/**
  * Convenience task: builds the standalone app image (AppletCarrier.exe + bundled runtime,
  * no installer, no Java needed on the target). Run it from IntelliJ's Gradle tool window
  * under "applet_carrier > desktopApp > Tasks > distribution > buildAppImage", or via

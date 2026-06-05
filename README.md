@@ -75,6 +75,28 @@ which must be installed and on `PATH`:
 ./gradlew :desktopApp:packageExe   # → build/compose/binaries/main/exe/*.exe
 ```
 
+#### Releases via GitHub Actions
+
+Pushing a tag named **`release_<version>`** (e.g. `release_1.2.3`) triggers
+`.github/workflows/release.yml`, which on a Windows runner runs the tests, builds the app
+image, zips it, and publishes it as a **GitHub Release asset** named
+`AppletCarrier-<version>.zip`.
+
+```bash
+git tag release_1.2.3
+git push origin release_1.2.3
+```
+
+Notes:
+- Tags point at commits, not branches, so this works from **any branch** and does **not**
+  run on ordinary pushes — only on `release_*` tags.
+- The `<version>` after `release_` is injected into the build via `-PappVersion`, which the
+  `generateVersionProperties` task writes to `version.properties` on the classpath.
+  `AppVersion` reads it at startup and the top bar shows it (`dev build` for local builds).
+  This is independent of jpackage's `packageVersion`.
+- The published `.exe` is **unsigned** (expect a Windows SmartScreen prompt on download);
+  code signing would need a certificate stored in repository secrets.
+
 #### Single standalone .exe
 
 There is no `jpackage` option for a single self-contained `.exe` — a JVM app always needs

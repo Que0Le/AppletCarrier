@@ -38,6 +38,7 @@ fun ApplicationScope.CarrierApplication() {
             ShellRoot(
                 host = runtime.host,
                 dialogHost = runtime.dialogHost,
+                version = AppVersion.value,
                 onOpenPrefs = { showPrefs = true },
             )
         }
