@@ -19,6 +19,9 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
         }
+        jvmMain.dependencies {
+            implementation(libs.kotlinx.serializationJson)
+        }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
