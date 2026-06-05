@@ -20,8 +20,8 @@ compose.desktop {
         mainClass = "com.example.applet_carrier.MainKt"
 
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "com.example.applet_carrier"
+            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Exe, TargetFormat.Deb)
+            packageName = "AppletCarrier"
             packageVersion = "1.0.0"
         }
     }
