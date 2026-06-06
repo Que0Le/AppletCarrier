@@ -52,7 +52,6 @@ import com.example.applet_carrier.ui.components.ToolButton
 import com.example.applet_carrier.ui.theme.CarrierColors
 import com.example.applet_carrier.ui.theme.CarrierDimens
 import com.example.applet_carrier.ui.theme.CarrierFontSizes
-import java.io.File
 import javax.imageio.ImageIO
 
 /**
@@ -171,12 +170,9 @@ class WifiQrApplet : Applet() {
                     Spacer(Modifier.width(CarrierDimens.gapSm))
                     ToolButton("Download PNG", tint = CarrierColors.Accent, onClick = {
                         image?.let { img ->
-                            NativeDialogs.save("Save Wi-Fi QR", "$filename.png")?.let { chosen ->
-                                val target = if (chosen.extension.equals("png", true)) chosen else File(chosen.parentFile, chosen.name + ".png")
-                                runCatching { ImageIO.write(img, "png", target) }
-                                    .onSuccess { status = "Saved ${target.name}" }
-                                    .onFailure { status = "Save failed: ${it.message}" }
-                            }
+                            NativeDialogs.saveViaDialog("Save Wi-Fi QR", "$filename.png", ensureExtension = "png") {
+                                ImageIO.write(img, "png", it)
+                            }?.let { status = it }
                         }
                     })
                     status?.let {

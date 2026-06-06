@@ -333,7 +333,7 @@ private fun KeySection(
         onCopy = { onCopy(publicKey) },
         onDownload = {
             if (publicKey.isNotEmpty()) {
-                NativeDialogs.save("Save public key", "${filename}.pub")?.let { it.writeText(publicKey); status = "Saved ${it.name}" }
+                NativeDialogs.saveViaDialog("Save public key", "$filename.pub") { it.writeText(publicKey) }?.let { status = it }
             }
         },
     )
@@ -346,7 +346,7 @@ private fun KeySection(
         onCopy = { onCopy(privateKey) },
         onDownload = {
             if (privateKey.isNotEmpty()) {
-                NativeDialogs.save("Save private key", filename)?.let { it.writeText(privateKey); status = "Saved ${it.name}" }
+                NativeDialogs.saveViaDialog("Save private key", filename) { it.writeText(privateKey) }?.let { status = it }
             }
         },
     )

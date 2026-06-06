@@ -49,7 +49,7 @@ object PortProcessLookup {
 
     /** Find every process owning a connection whose local OR foreign port equals [port]. */
     suspend fun find(port: Int): List<ProcessResult> = withContext(Dispatchers.IO) {
-        val rows = runCapture(listOf("netstat", "-ano")).second
+        val rows = runProcess(listOf("netstat", "-ano")).second
             .lineSequence()
             .mapNotNull { parseNetstatLine(it, port) }
             .toList()
@@ -62,7 +62,7 @@ object PortProcessLookup {
 
     /** Try a normal force-kill; success is confirmed by the process being gone. */
     suspend fun kill(pid: Long): KillOutcome = withContext(Dispatchers.IO) {
-        val (code, out) = runCapture(listOf("taskkill", "/F", "/PID", pid.toString()))
+        val (code, out) = runProcess(listOf("taskkill", "/F", "/PID", pid.toString()))
         if (code == 0 || !isAlive(pid)) KillOutcome.Success
         else KillOutcome.Failed(out.trim().ifBlank { "taskkill exit code $code" })
     }
@@ -71,7 +71,7 @@ object PortProcessLookup {
     suspend fun killElevated(pid: Long): KillOutcome = withContext(Dispatchers.IO) {
         val psCommand =
             "Start-Process taskkill -ArgumentList '/F','/PID','$pid' -Verb RunAs -WindowStyle Hidden"
-        val (code, _) = runCapture(listOf("powershell", "-NoProfile", "-Command", psCommand))
+        val (code, _) = runProcess(listOf("powershell", "-NoProfile", "-Command", psCommand))
         delay(500) // give the elevated taskkill a moment to act
         when {
             !isAlive(pid) -> KillOutcome.Success
@@ -131,7 +131,7 @@ object PortProcessLookup {
      * (e.g. a protected process without sufficient rights).
      */
     private fun wmiCommandLine(pid: Long): String? = try {
-        val (code, out) = runCapture(
+        val (code, out) = runProcess(
             listOf(
                 "powershell", "-NoProfile", "-Command",
                 "(Get-CimInstance Win32_Process -Filter \"ProcessId=$pid\").CommandLine",
@@ -151,7 +151,7 @@ object PortProcessLookup {
     )
 
     private fun taskListInfo(pid: Long): TaskInfo? = try {
-        val line = runCapture(
+        val line = runProcess(
             listOf("tasklist", "/v", "/fo", "csv", "/nh", "/fi", "PID eq $pid"),
         ).second.lineSequence().firstOrNull { it.startsWith("\"") }
 
@@ -174,12 +174,4 @@ object PortProcessLookup {
 
     private fun isAlive(pid: Long): Boolean =
         ProcessHandle.of(pid).map { it.isAlive }.orElse(false)
-
-    /** Run a command, returning (exitCode, combined stdout+stderr). */
-    private fun runCapture(command: List<String>): Pair<Int, String> {
-        val process = ProcessBuilder(command).redirectErrorStream(true).start()
-        val output = process.inputStream.bufferedReader().readText()
-        val code = process.waitFor()
-        return code to output
-    }
 }

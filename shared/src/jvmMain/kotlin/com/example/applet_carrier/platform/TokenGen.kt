@@ -103,11 +103,6 @@ object KeyGen {
             }
         }
 
-    private fun runProcess(command: List<String>): Pair<Int, String> {
-        val process = ProcessBuilder(command).redirectErrorStream(true).start()
-        val output = process.inputStream.bufferedReader().readText()
-        return process.waitFor() to output
-    }
 
     /** Overwrite then delete every file under [dir]; best-effort. */
     private fun shredDelete(dir: Path) {
