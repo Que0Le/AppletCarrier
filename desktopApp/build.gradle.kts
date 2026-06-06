@@ -23,6 +23,22 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Exe, TargetFormat.Deb)
             packageName = "AppletCarrier"
             packageVersion = "1.0.0"
+
+            // Per-platform launcher / installer icons. Guarded by exists() so packaging
+            // never breaks before the image files are added — see desktopApp/icons/README.md.
+            val iconsDir = project.file("icons")
+            windows {
+                val ico = iconsDir.resolve("icon.ico")
+                if (ico.exists()) iconFile.set(ico)
+            }
+            macOS {
+                val icns = iconsDir.resolve("icon.icns")
+                if (icns.exists()) iconFile.set(icns)
+            }
+            linux {
+                val png = iconsDir.resolve("icon.png")
+                if (png.exists()) iconFile.set(png)
+            }
         }
     }
 }

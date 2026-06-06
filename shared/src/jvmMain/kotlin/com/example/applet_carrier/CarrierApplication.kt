@@ -6,6 +6,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
@@ -14,6 +17,20 @@ import androidx.compose.ui.window.rememberWindowState
 import com.example.applet_carrier.ui.prefs.PrefsContent
 import com.example.applet_carrier.ui.shell.ShellRoot
 import com.example.applet_carrier.ui.theme.CarrierTheme
+import javax.imageio.ImageIO
+
+/**
+ * Running-window icon (taskbar / title bar), loaded once from `/icon.png` on the classpath
+ * (place it at `desktopApp/src/main/resources/icon.png`). Null → system default if absent.
+ * This is separate from the packaged launcher icon configured in `desktopApp/build.gradle.kts`.
+ */
+private val appWindowIcon: Painter? by lazy {
+    runCatching {
+        AppVersion::class.java.getResourceAsStream("/icon.png")?.use { stream ->
+            BitmapPainter(ImageIO.read(stream).toComposeImageBitmap())
+        }
+    }.getOrNull()
+}
 
 /**
  * Declares the application's windows: the main shell window, and the preferences window
@@ -33,6 +50,7 @@ fun ApplicationScope.CarrierApplication() {
         },
         title = "applet_carrier",
         state = mainState,
+        icon = appWindowIcon,
     ) {
         CarrierTheme {
             ShellRoot(
@@ -54,6 +72,7 @@ fun ApplicationScope.CarrierApplication() {
             onCloseRequest = { showPrefs = false },
             title = "Preferences — applet_carrier",
             state = prefsState,
+            icon = appWindowIcon,
         ) {
             CarrierTheme {
                 PrefsContent(host = runtime.host, onClose = { showPrefs = false })
