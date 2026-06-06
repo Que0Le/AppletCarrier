@@ -34,9 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toComposeImageBitmap
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -49,6 +47,7 @@ import com.example.applet_carrier.platform.NativeDialogs
 import com.example.applet_carrier.platform.WifiAuth
 import com.example.applet_carrier.platform.WifiQr
 import com.example.applet_carrier.platform.buildWifiPayload
+import com.example.applet_carrier.platform.copyToClipboard
 import com.example.applet_carrier.ui.components.ToolButton
 import com.example.applet_carrier.ui.theme.CarrierColors
 import com.example.applet_carrier.ui.theme.CarrierDimens
@@ -95,8 +94,6 @@ class WifiQrApplet : Applet() {
 
     @Composable
     override fun Ui() {
-        val clipboard = LocalClipboardManager.current
-
         var ssid by remember { mutableStateOf("") }
         var password by remember { mutableStateOf("") }
         var showPass by remember { mutableStateOf(false) }
@@ -189,7 +186,7 @@ class WifiQrApplet : Applet() {
                 }
                 Spacer(Modifier.height(CarrierDimens.gapMd))
 
-                // Raw WIFI: string (the requested extra)
+                // Raw WI-FI: string (the requested extra)
                 Text("Raw payload", color = CarrierColors.TextMuted, fontSize = CarrierFontSizes.secondary)
                 Spacer(Modifier.height(CarrierDimens.gapXs))
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
@@ -197,7 +194,7 @@ class WifiQrApplet : Applet() {
                         Text(payload, color = CarrierColors.TextPrimary, fontSize = CarrierFontSizes.secondary, fontFamily = FontFamily.Monospace)
                     }
                     Spacer(Modifier.width(CarrierDimens.gapSm))
-                    ToolButton("Copy", onClick = { clipboard.setText(AnnotatedString(payload)) })
+                    ToolButton("Copy", onClick = { copyToClipboard(payload) })
                 }
             }
 

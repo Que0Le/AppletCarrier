@@ -28,8 +28,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -37,6 +35,7 @@ import com.example.applet_carrier.api.Applet
 import com.example.applet_carrier.api.AppletContext
 import com.example.applet_carrier.api.AppletMetadata
 import com.example.applet_carrier.platform.DecodeResult
+import com.example.applet_carrier.platform.copyToClipboard
 import com.example.applet_carrier.platform.InputFormat
 import com.example.applet_carrier.platform.decodeInput
 import com.example.applet_carrier.platform.hashAll
@@ -71,12 +70,11 @@ class HashApplet : Applet() {
 
     @Composable
     override fun Ui() {
-        val clipboard = LocalClipboardManager.current
         var input by remember { mutableStateOf("") }
         var format by remember { mutableStateOf(initialFormat) }
         lastFormat = format
 
-        fun copy(value: String) = clipboard.setText(AnnotatedString(value))
+        fun copy(value: String) = copyToClipboard(value)
 
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(CarrierDimens.gapLg),

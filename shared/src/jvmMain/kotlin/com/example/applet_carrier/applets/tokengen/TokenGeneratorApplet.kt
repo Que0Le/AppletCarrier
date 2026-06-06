@@ -32,9 +32,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import com.example.applet_carrier.api.Applet
 import com.example.applet_carrier.api.AppletContext
@@ -43,6 +41,7 @@ import com.example.applet_carrier.platform.KeyGen
 import com.example.applet_carrier.platform.KeyGenResult
 import com.example.applet_carrier.platform.NativeDialogs
 import com.example.applet_carrier.platform.PasswordOptions
+import com.example.applet_carrier.platform.copyToClipboard
 import com.example.applet_carrier.platform.generatePassword
 import com.example.applet_carrier.ui.components.HorizontalSeam
 import com.example.applet_carrier.ui.components.ToolButton
@@ -108,12 +107,11 @@ class TokenGeneratorApplet : Applet() {
 
     @Composable
     override fun Ui() {
-        val clipboard = LocalClipboardManager.current
         val scope = rememberCoroutineScope()
         val random = remember { SecureRandom() }
 
         fun copy(value: String) {
-            if (value.isNotEmpty()) clipboard.setText(AnnotatedString(value))
+            if (value.isNotEmpty()) copyToClipboard(value)
         }
 
         Column(

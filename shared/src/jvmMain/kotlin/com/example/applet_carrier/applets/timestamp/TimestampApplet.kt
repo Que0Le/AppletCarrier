@@ -36,9 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -51,6 +49,7 @@ import com.example.applet_carrier.platform.ForcedMode
 import com.example.applet_carrier.platform.OffsetStyles
 import com.example.applet_carrier.platform.TsParse
 import com.example.applet_carrier.platform.buildFormatGroups
+import com.example.applet_carrier.platform.copyToClipboard
 import com.example.applet_carrier.platform.parseTimestamp
 import com.example.applet_carrier.ui.components.ToolButton
 import com.example.applet_carrier.ui.theme.CarrierColors
@@ -118,7 +117,6 @@ class TimestampApplet : Applet() {
 
     @Composable
     override fun Ui() {
-        val clipboard = LocalClipboardManager.current
         val focus = LocalFocusManager.current
 
         var input by remember { mutableStateOf(lastInput) }
@@ -145,7 +143,7 @@ class TimestampApplet : Applet() {
         }
 
         fun copy(value: String) {
-            clipboard.setText(AnnotatedString(value))
+            copyToClipboard(value)
             copied = value
         }
 

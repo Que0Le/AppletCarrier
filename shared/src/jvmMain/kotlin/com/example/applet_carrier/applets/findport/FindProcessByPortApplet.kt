@@ -29,8 +29,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -41,6 +39,7 @@ import com.example.applet_carrier.api.AppletContext
 import com.example.applet_carrier.api.AppletMetadata
 import com.example.applet_carrier.platform.KillOutcome
 import com.example.applet_carrier.platform.PortProcessLookup
+import com.example.applet_carrier.platform.copyToClipboard
 import com.example.applet_carrier.platform.ProcessResult
 import com.example.applet_carrier.ui.components.ToolButton
 import com.example.applet_carrier.ui.theme.CarrierColors
@@ -84,7 +83,6 @@ class FindProcessByPortApplet : Applet() {
     @Composable
     override fun Ui() {
         val scope = rememberCoroutineScope()
-        val clipboard = LocalClipboardManager.current
         val dialogs = context?.dialogs
 
         var portText by remember { mutableStateOf(initialPort) }
@@ -188,7 +186,7 @@ class FindProcessByPortApplet : Applet() {
                 ProcessCard(
                     result = result,
                     onCopyPid = {
-                        clipboard.setText(AnnotatedString(result.pid.toString()))
+                        copyToClipboard(result.pid.toString())
                         actionStatus = "Copied PID ${result.pid} to clipboard."
                     },
                     onKill = { onKill(result) },
