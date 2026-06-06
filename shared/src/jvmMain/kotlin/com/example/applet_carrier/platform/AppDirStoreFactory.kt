@@ -6,13 +6,14 @@ import com.example.applet_carrier.core.StoreFactory
 import java.io.File
 
 /**
- * [StoreFactory] that writes one JSON file per applet/concern to the user's Desktop
- * (AGENTS.md §5). The Desktop directory is the single place to change the storage
- * location later.
+ * [StoreFactory] that writes one JSON file per applet/concern to `~/.applet_carrier`
+ * (cross-platform — under the user's home directory on Windows, macOS, and Linux). The
+ * directory is created lazily on first write. This is the single place to change the
+ * storage location (AGENTS.md §5).
  */
-class DesktopStoreFactory : StoreFactory {
+class AppDirStoreFactory : StoreFactory {
 
-    private val baseDir: File = File(System.getProperty("user.home"), "Desktop")
+    private val baseDir: File = File(System.getProperty("user.home"), ".applet_carrier")
 
     override fun appletState(appletId: String): StateStore =
         JsonStore(File(baseDir, "${normalizeAscii(appletId)}-state.json"))

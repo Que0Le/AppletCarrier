@@ -9,7 +9,7 @@ import com.example.applet_carrier.applets.tokengen.TokenGeneratorApplet
 import com.example.applet_carrier.applets.wifiqr.WifiQrApplet
 import com.example.applet_carrier.core.AppletHost
 import com.example.applet_carrier.core.AppletRegistry
-import com.example.applet_carrier.platform.DesktopStoreFactory
+import com.example.applet_carrier.platform.AppDirStoreFactory
 import com.example.applet_carrier.ui.dialogs.DialogHost
 
 /** The wired-up runtime: the host plus the concrete dialog host the shell renders. */
@@ -36,7 +36,7 @@ object CarrierBootstrap {
                 WifiQrApplet(),
             ),
         )
-        val storeFactory = DesktopStoreFactory()
+        val storeFactory = AppDirStoreFactory()
         val dialogHost = DialogHost()
 
         val host = AppletHost(

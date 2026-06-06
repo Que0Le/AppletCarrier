@@ -5,7 +5,7 @@ import com.example.applet_carrier.api.StateStore
 
 /**
  * Creates persistence stores. The desktop implementation backs each store with a JSON
- * file on the user's Desktop (AGENTS.md §5). Kept as an interface so the storage
+ * file under `~/.applet_carrier` (AGENTS.md §5). Kept as an interface so the storage
  * location/format is a single swappable seam.
  */
 interface StoreFactory {

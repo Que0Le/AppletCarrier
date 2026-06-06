@@ -156,8 +156,10 @@ Applets must behave like **browser tabs**:
   - State:  `<applet-id>-state.json`
   - Config: `<applet-id>-config.json`
   - Host:   `host-config.json`
-- **Location: the user's Desktop** (`~/Desktop`, i.e. `%USERPROFILE%\Desktop` on
-  Windows) for now. Keep this path behind a single helper so it's trivial to change later.
+- **Location: `~/.applet_carrier`** — a dotfolder in the user's home directory
+  (cross-platform: `%USERPROFILE%\.applet_carrier` on Windows, `~/.applet_carrier` on
+  macOS/Linux), created lazily on first write. Kept behind a single helper
+  (`AppDirStoreFactory`) so it's trivial to change.
 - **Filenames are ASCII-normalized**: lowercase, spaces → hyphens, strip/replace any
   non-ASCII characters. E.g. applet display name "My Notes" ⇒ id/file stem `my-notes`.
 - **State lifecycle**: start with defaults on first run (no welcome/setup dialog).

@@ -45,7 +45,7 @@ fun GeneralPrefsPage(host: AppletHost) {
 
         Spacer(Modifier.height(16.dp))
         Text(
-            "State and configuration files are stored on your Desktop, one pair per applet.",
+            "State and configuration files are stored in ~/.applet_carrier (your home folder), one pair per applet.",
             color = CarrierColors.TextMuted,
             fontSize = CarrierFontSizes.secondary,
         )
