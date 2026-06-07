@@ -42,11 +42,25 @@ class ProxmoxClient(serverUrl: String, tokenId: String, secret: String) {
             val nodes = parseNodeNames(getOrThrow("/nodes"))
             buildList {
                 for (node in nodes) {
-                    addAll(parseResources(getOrThrow("/nodes/$node/qemu"), node, ResourceType.VM))
+                    parseResources(getOrThrow("/nodes/$node/qemu"), node, ResourceType.VM)
+                        .forEach { add(refinePaused(it)) }
                     addAll(parseResources(getOrThrow("/nodes/$node/lxc"), node, ResourceType.CT))
                 }
             }.sortedBy { it.vmid }
         }
+    }
+
+    /**
+     * The /qemu list reports a paused VM as "running" (the qemu process is alive). The real
+     * paused state is only in qmpstatus from status/current, so for running VMs make one
+     * extra call to detect it. Best-effort — failures leave the VM as "running".
+     */
+    private fun refinePaused(vm: ProxmoxResource): ProxmoxResource {
+        if (vm.status != "running") return vm
+        val qmp = runCatching {
+            parseQmpStatus(getOrThrow("/nodes/${vm.node}/qemu/${vm.vmid}/status/current"))
+        }.getOrNull()
+        return if (qmp == "paused") vm.copy(status = "paused") else vm
     }
 
     /** POST a status action (start/shutdown/stop/reboot/reset) with an empty body. */
