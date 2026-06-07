@@ -18,6 +18,15 @@ options:
     - Hot reload: `./gradlew :desktopApp:hotRun --auto`
     - Standard run: `./gradlew :desktopApp:run`
 
+> **macOS / Linux: `./gradlew` Permission denied?** If you see
+> `Cannot run program "./gradlew" … error: 13 (Permission denied)`, the wrapper script is
+> missing its executable bit (it was committed on Windows). Fix it once:
+> ```bash
+> chmod +x gradlew
+> ```
+> The repo records the bit in git (`100755`), so a fresh `git pull` / checkout already has
+> it — this only bites older checkouts. Windows uses `gradlew.bat` and is unaffected.
+
 ### Running tests
 
 Use the run button in your IDE's editor gutter, or run tests using Gradle tasks:
