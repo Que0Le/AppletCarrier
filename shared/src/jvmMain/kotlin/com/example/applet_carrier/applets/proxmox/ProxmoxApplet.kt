@@ -345,14 +345,22 @@ private fun statusColor(status: String): Color = when (status) {
     else -> CarrierColors.TextMuted
 }
 
-/** Per-spec action set: running → shutdown/stop/reboot(+reset for VMs); stopped → start; else none. */
+/**
+ * Action set per status:
+ *  - running → pause/shutdown/stop/reboot (+reset for VMs)
+ *  - paused  → resume/stop
+ *  - stopped → start
+ * (Pause=suspend, Resume=resume — non-destructive, no confirm.)
+ */
 private fun actionsFor(res: ProxmoxResource): List<Pair<String, String>> = when (res.status) {
     "running" -> buildList {
+        add("Pause" to "suspend")
         add("Shutdown" to "shutdown")
-        add("Stop" to "stop")
         add("Reboot" to "reboot")
+        add("Stop" to "stop")
         if (res.type == ResourceType.VM) add("Reset" to "reset")
     }
+    "paused" -> listOf("Resume" to "resume", "Stop" to "stop")
     "stopped" -> listOf("Start" to "start")
     else -> emptyList()
 }

@@ -57,6 +57,25 @@ class ProxmoxParsingTest {
     }
 
     @Test
+    fun qmpstatus_paused_takesPrecedenceOverRunning() {
+        // A paused VM: status=running (process alive) but qmpstatus=paused.
+        val body = """{"data":[{"vmid":100,"name":"web","status":"running","qmpstatus":"paused","cpu":0.0,"mem":0,"maxmem":0}]}"""
+        assertEquals("paused", parseResources(body, "pve", ResourceType.VM).first().status)
+    }
+
+    @Test
+    fun status_usedWhenNoQmpstatus() {
+        val body = """{"data":[{"vmid":100,"status":"stopped","cpu":0.0,"mem":0,"maxmem":0}]}"""
+        assertEquals("stopped", parseResources(body, "pve", ResourceType.VM).first().status)
+    }
+
+    @Test
+    fun qmpStatus_fromStatusCurrent() {
+        assertEquals("paused", parseQmpStatus("""{"data":{"status":"running","qmpstatus":"paused","cpu":0.0}}"""))
+        assertEquals("running", parseQmpStatus("""{"data":{"status":"running","qmpstatus":"running"}}"""))
+    }
+
+    @Test
     fun resources_skipsEntriesWithoutVmid() {
         val body = """{"data":[{"name":"ghost","status":"running"}]}"""
         assertTrue(parseResources(body, "pve", ResourceType.VM).isEmpty())
