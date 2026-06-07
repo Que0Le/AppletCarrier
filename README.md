@@ -11,8 +11,10 @@ This is a Kotlin Multiplatform project targeting Desktop (JVM).
 
 ### Running the apps
 
-Use the run configurations provided by the run widget in your IDE's toolbar. You can also use these commands and
-options:
+For day-to-day development (not a packaged binary), run via the **`:desktopApp:run` Gradle
+task** — it's the app's run configuration and shows up in IntelliJ's run widget and in the
+Gradle tool window (**desktopApp → Tasks → application → run**). These work the same on
+Windows, macOS, and Linux:
 
 - Desktop app:
     - Hot reload: `./gradlew :desktopApp:hotRun --auto`
@@ -54,19 +56,32 @@ The app is packaged with the Compose Desktop plugin (which wraps the JDK's `jpac
 `createDistributable`. In IntelliJ, run it from the Gradle tool window under
 **desktopApp → Tasks → distribution → buildAppImage**.
 
-Output:
+`jpackage` builds **only for the OS it runs on**, so run this on each platform you want a
+binary for. The output is a self-contained bundle with a bundled Java runtime (no JDK/JRE
+needed on the target). All of it lands under:
 
 ```
-desktopApp/build/compose/binaries/main/app/AppletCarrier/
-├── AppletCarrier.exe   ← double-click to start
-├── runtime/            ← bundled Java runtime (no JDK/JRE required on the target)
-└── app/                ← compiled code + libraries
+desktopApp/build/compose/binaries/main/app/
 ```
 
-The folder is fully self-contained and portable — copy or **zip the whole `AppletCarrier`
-folder** to share it. The three items must stay together (the `.exe` finds its sibling
-`runtime/` and `app/`). Note: it lives under `build/`, so it is regenerated on each run and
-removed by `./gradlew clean`.
+**Where the binary is and how to run it from the file manager:**
+
+| OS | Produced under `…/main/app/` | Run by double-clicking |
+|----|------------------------------|------------------------|
+| **Windows** | `AppletCarrier/` (folder) | `AppletCarrier/AppletCarrier.exe` in **Explorer** |
+| **macOS** | `AppletCarrier.app` (bundle) | `AppletCarrier.app` in **Finder** (or drag to `/Applications`) |
+| **Linux** | `AppletCarrier/` (folder) | `AppletCarrier/bin/AppletCarrier` (terminal or file manager) |
+
+- **Windows** — the folder holds `AppletCarrier.exe` + `runtime/` + `app/`; keep them
+  together (the exe finds its siblings). Zip the whole folder to share it.
+- **macOS** — a single double-clickable `AppletCarrier.app`; the runtime is inside the
+  bundle. Zip it with `ditto -c -k --keepParent AppletCarrier.app AppletCarrier.zip` to
+  preserve bundle symlinks.
+- **Linux** — the folder holds `bin/AppletCarrier` + `lib/`; launch `bin/AppletCarrier`.
+
+Everything is under `build/`, so it's regenerated each build and removed by `./gradlew
+clean` — copy the bundle elsewhere to keep or share it. (First-run prompts for *downloaded*
+builds: see "Running a downloaded build" below.)
 
 A smaller, ProGuard-minified variant:
 
@@ -112,22 +127,34 @@ Notes:
 - The published `.exe` is **unsigned** (expect a Windows SmartScreen prompt on download);
   code signing would need a certificate stored in repository secrets.
 
-#### Running a downloaded build (Windows SmartScreen)
+#### Running a downloaded build (unsigned-app prompts)
 
-The released `.exe` is **unsigned**, so Windows tags the downloaded zip with the "Mark of
-the Web" and SmartScreen shows a *"Windows protected your PC"* prompt on first run. The
-free way to avoid it:
+The builds are **unsigned**, so each OS warns on first launch of a *downloaded* build.
+(A locally-*built* bundle usually opens directly — these prompts come from the
+"downloaded from the internet" quarantine flag.)
 
-1. Right-click the downloaded `AppletCarrier-<version>.zip` → **Properties**.
+**Windows (SmartScreen):** the downloaded zip is flagged with the "Mark of the Web" and
+shows *"Windows protected your PC."* To avoid it:
+
+1. Right-click the downloaded `AppletCarrier-windows-<version>.zip` → **Properties**.
 2. Tick **Unblock** (bottom of the dialog) → **OK**.
 3. **Then** extract the zip and run `AppletCarrier.exe`.
 
-Unblocking before extracting strips the Mark of the Web from every extracted file, so no
-SmartScreen prompt appears. (If you forget, you can still click **More info → Run anyway**
-on the prompt.) Verify the download with the published SHA-256 checksum if provided.
+Unblocking before extracting strips the flag from every extracted file. (If you forget, you
+can still click **More info → Run anyway** on the prompt.)
 
-> Removing the prompt entirely requires code signing (e.g. Azure Trusted Signing) — planned
-> for later, not yet configured.
+**macOS (Gatekeeper):** a downloaded `.app` shows *"AppletCarrier can't be opened because it
+is from an unidentified developer."* Approve it once:
+
+1. **Right-click** `AppletCarrier.app` → **Open** → **Open** in the dialog, **or**
+2. strip the quarantine flag: `xattr -dr com.apple.quarantine AppletCarrier.app`
+
+After the first approval it launches on a normal double-click.
+
+Verify downloads with the published SHA-256 checksum if provided.
+
+> Removing these prompts entirely requires code signing (Azure Trusted Signing on Windows,
+> an Apple Developer ID + notarization on macOS) — planned for later, not yet configured.
 
 #### Single standalone .exe
 
