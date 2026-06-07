@@ -6,7 +6,7 @@ import kotlinx.coroutines.withContext
 import java.time.Duration
 import java.time.Instant
 
-/** One netstat connection row that matched the searched port. */
+/** One connection (netstat row / lsof file) that matched the searched port. */
 data class PortMatch(
     val protocol: String,        // TCP / UDP
     val localAddress: String,
@@ -39,97 +39,99 @@ sealed interface KillOutcome {
 }
 
 /**
- * Windows port → process lookup. Uses `netstat -ano` for the port→PID mapping (parsed in
- * code, not via `findstr`, to avoid false positives), the JDK [ProcessHandle] for rich
- * details, and `tasklist /v` for image name, RAM and window title (AGENTS.md: platform
- * applets live in jvmMain). The public surface is suspend-based and runs off the UI
- * thread; a future `lsof`-based impl could replace the Windows internals.
+ * Cross-platform port → process lookup.
+ *
+ *  - Windows: `netstat -ano` (parsed in code) + JDK [ProcessHandle] + `tasklist /v` + WMI.
+ *  - macOS / Linux: `lsof -nP -i:<port>` + [ProcessHandle] + `ps` (rss/user/comm).
+ *
+ * The public surface is suspend-based and runs off the UI thread; failures (e.g. the tool
+ * missing) propagate so the caller can show a message.
  */
 object PortProcessLookup {
 
     /** Find every process owning a connection whose local OR foreign port equals [port]. */
     suspend fun find(port: Int): List<ProcessResult> = withContext(Dispatchers.IO) {
-        val rows = runProcess(listOf("netstat", "-ano")).second
+        when {
+            Os.isWindows -> findWindows(port)
+            Os.isUnix -> findUnix(port)
+            else -> throw UnsupportedOperationException("Port lookup isn't supported on ${Os.name}")
+        }
+    }
+
+    /** Force-kill the process; success is confirmed by the process being gone. */
+    suspend fun kill(pid: Long): KillOutcome = withContext(Dispatchers.IO) {
+        if (Os.isWindows) killWindows(pid) else killUnix(pid)
+    }
+
+    /** Retry the kill elevated (UAC on Windows, admin prompt on macOS, pkexec on Linux). */
+    suspend fun killElevated(pid: Long): KillOutcome = withContext(Dispatchers.IO) {
+        if (Os.isWindows) killWindowsElevated(pid) else killUnixElevated(pid)
+    }
+
+    private fun isAlive(pid: Long): Boolean =
+        ProcessHandle.of(pid).map { it.isAlive }.orElse(false)
+
+    // ================= Windows =================
+
+    private fun findWindows(port: Int): List<ProcessResult> =
+        runProcess(listOf("netstat", "-ano")).second
             .lineSequence()
             .mapNotNull { parseNetstatLine(it, port) }
             .toList()
-
-        rows.groupBy { it.pid }
-            .map { (pid, matches) -> buildProcessResult(pid, matches.map { it.match }) }
-            // Listeners first — usually what you care about.
+            .groupBy { it.pid }
+            .map { (pid, matches) -> buildWindowsProcessResult(pid, matches.map { it.match }) }
             .sortedByDescending { res -> res.connections.any { it.state.equals("LISTENING", true) } }
-    }
 
-    /** Try a normal force-kill; success is confirmed by the process being gone. */
-    suspend fun kill(pid: Long): KillOutcome = withContext(Dispatchers.IO) {
+    private fun killWindows(pid: Long): KillOutcome {
         val (code, out) = runProcess(listOf("taskkill", "/F", "/PID", pid.toString()))
-        if (code == 0 || !isAlive(pid)) KillOutcome.Success
+        return if (code == 0 || !isAlive(pid)) KillOutcome.Success
         else KillOutcome.Failed(out.trim().ifBlank { "taskkill exit code $code" })
     }
 
-    /** Retry the kill elevated (triggers a UAC prompt). Verifies the PID is gone after. */
-    suspend fun killElevated(pid: Long): KillOutcome = withContext(Dispatchers.IO) {
+    private suspend fun killWindowsElevated(pid: Long): KillOutcome {
         val psCommand =
             "Start-Process taskkill -ArgumentList '/F','/PID','$pid' -Verb RunAs -WindowStyle Hidden"
         val (code, _) = runProcess(listOf("powershell", "-NoProfile", "-Command", psCommand))
-        delay(500) // give the elevated taskkill a moment to act
-        when {
+        delay(500)
+        return when {
             !isAlive(pid) -> KillOutcome.Success
             code != 0 -> KillOutcome.Failed("Elevation cancelled or denied")
             else -> KillOutcome.Failed("Process is still running")
         }
     }
 
-    // ---- internals ----
-
-    private fun buildProcessResult(pid: Long, connections: List<PortMatch>): ProcessResult {
+    private fun buildWindowsProcessResult(pid: Long, connections: List<PortMatch>): ProcessResult {
         val handle = ProcessHandle.of(pid).orElse(null)
         val info = handle?.info()
         val handleUser = info?.user()?.orElse(null)
-        val start = info?.startInstant()?.orElse(null)
-        val cpu = info?.totalCpuDuration()?.orElse(null)
-
-        // Executable path: ProcessHandle.command() is reliable on Windows.
         val exe = info?.command()?.orElse(null)
-        // Arguments: ProcessHandle.arguments()/commandLine() are usually empty on Windows,
-        // so fall back to WMI for the full command line and split off the parameters.
+        // ProcessHandle.arguments()/commandLine() are usually empty on Windows → fall back to WMI.
         val handleArgs = info?.arguments()?.orElse(null)?.takeIf { it.isNotEmpty() }?.joinToString(" ")
         val fullCommandLine = info?.commandLine()?.orElse(null) ?: wmiCommandLine(pid)
         val parsed = fullCommandLine?.let(::splitCommandLine)
         val command = exe ?: parsed?.first?.takeIf { it.isNotBlank() }
-        val arguments = handleArgs
-            ?: parsed?.second?.takeIf { it.isNotBlank() }
+        val arguments = handleArgs ?: parsed?.second?.takeIf { it.isNotBlank() }
 
         val parent = handle?.parent()?.orElse(null)
-        val parentPid = parent?.pid()
-        val parentName = parent?.info()?.command()?.orElse(null)?.let(::baseName)
-
         val task = taskListInfo(pid)
 
         return ProcessResult(
             pid = pid,
-            imageName = task?.image
-                ?: info?.command()?.orElse(null)?.let(::baseName)
-                ?: "unknown",
+            imageName = task?.image ?: exe?.let(::baseName) ?: "unknown",
             userName = task?.user?.takeIf { it.isNotBlank() && it != "N/A" } ?: handleUser,
             command = command,
             arguments = arguments,
-            parentPid = parentPid,
-            parentName = parentName,
+            parentPid = parent?.pid(),
+            parentName = parent?.info()?.command()?.orElse(null)?.let(::baseName),
             memoryKb = task?.memKb,
-            startInstant = start,
-            cpuTime = cpu,
+            startInstant = info?.startInstant()?.orElse(null),
+            cpuTime = info?.totalCpuDuration()?.orElse(null),
             status = task?.status?.takeIf { it.isNotBlank() && it != "N/A" },
             windowTitle = task?.windowTitle?.takeIf { it.isNotBlank() && it != "N/A" },
             connections = connections,
         )
     }
 
-    /**
-     * Full command line via WMI. Windows doesn't expose process arguments through the
-     * JDK, so this PowerShell/CIM query is the reliable source. Returns null if empty
-     * (e.g. a protected process without sufficient rights).
-     */
     private fun wmiCommandLine(pid: Long): String? = try {
         val (code, out) = runProcess(
             listOf(
@@ -154,11 +156,9 @@ object PortProcessLookup {
         val line = runProcess(
             listOf("tasklist", "/v", "/fo", "csv", "/nh", "/fi", "PID eq $pid"),
         ).second.lineSequence().firstOrNull { it.startsWith("\"") }
-
         if (line == null) {
             null
         } else {
-            // Columns: Image, PID, Session, Session#, MemUsage, Status, UserName, CPUTime, WindowTitle
             val cols = parseCsvLine(line)
             TaskInfo(
                 image = cols.getOrNull(0),
@@ -172,6 +172,69 @@ object PortProcessLookup {
         null
     }
 
-    private fun isAlive(pid: Long): Boolean =
-        ProcessHandle.of(pid).map { it.isAlive }.orElse(false)
+    // ================= macOS / Linux =================
+
+    private fun findUnix(port: Int): List<ProcessResult> =
+        // lsof exits 1 with no output when nothing matches — that's empty, not an error.
+        runProcess(listOf("lsof", "-nP", "-i:$port", "-FpcfPTn")).second
+            .let { parseLsof(it, port) }
+            .groupBy { it.pid }
+            .map { (pid, entries) -> buildUnixProcessResult(pid, entries.map { it.match }) }
+            .sortedByDescending { res -> res.connections.any { it.state.equals("LISTEN", true) } }
+
+    private fun buildUnixProcessResult(pid: Long, connections: List<PortMatch>): ProcessResult {
+        val handle = ProcessHandle.of(pid).orElse(null)
+        val info = handle?.info()
+        val command = info?.command()?.orElse(null)
+        // ProcessHandle args/commandLine DO work on Unix.
+        val arguments = info?.arguments()?.orElse(null)?.takeIf { it.isNotEmpty() }?.joinToString(" ")
+            ?: info?.commandLine()?.orElse(null)?.let { splitCommandLine(it).second.takeIf(String::isNotBlank) }
+        val parent = handle?.parent()?.orElse(null)
+
+        return ProcessResult(
+            pid = pid,
+            imageName = command?.let(::baseName) ?: psField(pid, "comm=") ?: "unknown",
+            userName = info?.user()?.orElse(null) ?: psField(pid, "user="),
+            command = command,
+            arguments = arguments,
+            parentPid = parent?.pid(),
+            parentName = parent?.info()?.command()?.orElse(null)?.let(::baseName),
+            memoryKb = psField(pid, "rss=")?.let(::parseRssKb),
+            startInstant = info?.startInstant()?.orElse(null),
+            cpuTime = info?.totalCpuDuration()?.orElse(null),
+            status = null,
+            windowTitle = null,
+            connections = connections,
+        )
+    }
+
+    /** Read a single `ps -o <field>= -p <pid>` value (header suppressed by the trailing `=`). */
+    private fun psField(pid: Long, field: String): String? = try {
+        runProcess(listOf("ps", "-o", field, "-p", pid.toString())).second.trim().ifBlank { null }
+    } catch (_: Exception) {
+        null
+    }
+
+    private fun killUnix(pid: Long): KillOutcome {
+        val (code, out) = runProcess(listOf("kill", "-9", pid.toString()))
+        return if (code == 0 || !isAlive(pid)) KillOutcome.Success
+        else KillOutcome.Failed(out.trim().ifBlank { "kill exit code $code" })
+    }
+
+    private suspend fun killUnixElevated(pid: Long): KillOutcome {
+        val command = if (Os.isMac) {
+            // Triggers the macOS admin password prompt.
+            listOf("osascript", "-e", "do shell script \"kill -9 $pid\" with administrator privileges")
+        } else {
+            // Linux: polkit GUI prompt (if pkexec is available).
+            listOf("pkexec", "kill", "-9", pid.toString())
+        }
+        val (code, _) = runProcess(command)
+        delay(500)
+        return when {
+            !isAlive(pid) -> KillOutcome.Success
+            code != 0 -> KillOutcome.Failed("Elevation cancelled or denied")
+            else -> KillOutcome.Failed("Process is still running")
+        }
+    }
 }

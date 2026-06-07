@@ -101,9 +101,14 @@ class FindProcessByPortApplet : Applet() {
                     searchJob?.cancel()
                     searchJob = scope.launch {
                         status = SearchStatus.Searching
-                        val found = PortProcessLookup.find(port)
-                        results = found
-                        status = if (found.isEmpty()) SearchStatus.Empty(port) else SearchStatus.Found(port)
+                        try {
+                            val found = PortProcessLookup.find(port)
+                            results = found
+                            status = if (found.isEmpty()) SearchStatus.Empty(port) else SearchStatus.Found(port)
+                        } catch (e: Exception) {
+                            results = emptyList()
+                            status = SearchStatus.Failed(e.message ?: "Lookup failed.")
+                        }
                     }
                 }
             }
@@ -203,6 +208,7 @@ private sealed interface SearchStatus {
     data object Searching : SearchStatus
     data class Empty(val port: Int) : SearchStatus
     data class Found(val port: Int) : SearchStatus
+    data class Failed(val message: String) : SearchStatus
 }
 
 @Composable
@@ -221,6 +227,11 @@ private fun StatusLine(status: SearchStatus) {
         }
         is SearchStatus.Empty -> Hint("No process is using port ${status.port}.")
         is SearchStatus.Found -> Hint("Port ${status.port}: matching process(es) below.")
+        is SearchStatus.Failed -> Text(
+            "⚠  ${status.message}",
+            color = CarrierColors.Danger,
+            fontSize = CarrierFontSizes.secondary,
+        )
     }
 }
 

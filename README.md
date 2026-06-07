@@ -78,9 +78,15 @@ which must be installed and on `PATH`:
 #### Releases via GitHub Actions
 
 Pushing a tag named **`release_<version>`** (e.g. `release_1.2.3`) triggers
-`.github/workflows/release.yml`, which on a Windows runner runs the tests, builds the app
-image, zips it, and publishes it as a **GitHub Release asset** named
-`AppletCarrier-<version>.zip`.
+`.github/workflows/release.yml`, which runs the tests and builds the app image on **both a
+Windows and a macOS runner**, then publishes them as **GitHub Release assets**:
+
+- `AppletCarrier-windows-<version>.zip` — the Windows app-image folder
+- `AppletCarrier-macos-<version>.zip` — the macOS `.app` bundle (zipped with `ditto`)
+- `AppletCarrier-<version>.dmg` — a macOS installer (best-effort; skipped if the DMG step fails)
+
+The macOS runner is Apple Silicon (arm64). For Intel Mac builds, add a second job on
+`macos-13`.
 
 ```bash
 git tag release_1.2.3

@@ -4,7 +4,7 @@ import java.awt.FileDialog
 import java.awt.Frame
 import java.io.File
 
-/** Native Windows file dialogs via AWT (works alongside Compose Desktop windows). */
+/** Native file dialogs via AWT (cross-platform; works alongside Compose Desktop windows). */
 object NativeDialogs {
 
     /** "Save as" dialog, prefilled with [suggestedName]. Returns null if cancelled. */

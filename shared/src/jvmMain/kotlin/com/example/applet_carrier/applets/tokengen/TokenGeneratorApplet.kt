@@ -260,7 +260,7 @@ private fun KeySection(
         )
         Spacer(Modifier.width(CarrierDimens.gapSm))
         ToolButton("Browse", onClick = {
-            NativeDialogs.open("Locate ssh-keygen.exe")?.let { keygenPath = it.absolutePath }
+            NativeDialogs.open("Locate ssh-keygen")?.let { keygenPath = it.absolutePath }
         })
     }
     Spacer(Modifier.height(CarrierDimens.gapXs))

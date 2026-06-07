@@ -39,7 +39,10 @@ start/stop buttons, and notifications/badges.
 - Modules:
   - `:shared` — `commonMain` + `jvmMain`, holds **all** UI and logic. Package `com.example.applet_carrier`.
   - `:desktopApp` — JVM entry point only. Main class `com.example.applet_carrier.MainKt` (`desktopApp/src/main/kotlin/.../main.kt`).
-- **Target platform for now: Windows only.** Build/run via the `desktopApp` module.
+- **Target platforms: Windows, macOS, Linux** (JVM desktop). Build/run via the `desktopApp`
+  module; `compose.desktop.currentOs` resolves the right native libs per OS. Platform
+  applets that shell out branch on `Os` (e.g. Find-process: `netstat` on Windows, `lsof`/
+  `ps` on Unix). Packaging (jpackage) only produces output for the OS it runs on.
 
 Put new shared code under
 `shared/src/commonMain/kotlin/com/example/applet_carrier/`. The platform is JVM

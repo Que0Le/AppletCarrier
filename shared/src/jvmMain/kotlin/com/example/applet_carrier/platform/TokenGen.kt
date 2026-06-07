@@ -72,11 +72,16 @@ internal fun sshKeygenArgs(exe: String, outFile: String, comment: String, passph
 
 object KeyGen {
 
-    /** Best-effort default path to ssh-keygen (Windows ships it under System32\OpenSSH). */
+    /** Best-effort default path to ssh-keygen, per OS; falls back to the PATH name. */
     fun defaultSshKeygenPath(): String {
-        val systemRoot = System.getenv("SystemRoot") ?: "C:\\Windows"
-        val bundled = File(systemRoot, "System32\\OpenSSH\\ssh-keygen.exe")
-        return if (bundled.exists()) bundled.absolutePath else "ssh-keygen"
+        if (Os.isWindows) {
+            val systemRoot = System.getenv("SystemRoot") ?: "C:\\Windows"
+            val bundled = File(systemRoot, "System32\\OpenSSH\\ssh-keygen.exe")
+            return if (bundled.exists()) bundled.absolutePath else "ssh-keygen"
+        }
+        // macOS / Linux: ssh-keygen ships at /usr/bin/ssh-keygen and is on PATH.
+        val unixDefault = File("/usr/bin/ssh-keygen")
+        return if (unixDefault.exists()) unixDefault.absolutePath else "ssh-keygen"
     }
 
     /**
