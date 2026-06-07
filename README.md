@@ -127,6 +127,26 @@ Notes:
 - The published `.exe` is **unsigned** (expect a Windows SmartScreen prompt on download);
   code signing would need a certificate stored in repository secrets.
 
+#### Installing a released build (from a GitHub Release)
+
+On the repo's **Releases** page, download the asset for your OS, then:
+
+**macOS — from `AppletCarrier-macos-<version>.zip`:**
+1. Download the zip and **double-click it** in Finder to unzip → you get `AppletCarrier.app`.
+2. Move `AppletCarrier.app` wherever you like (e.g. drag it into **/Applications**).
+3. **First launch only** (it's unsigned): **right-click** `AppletCarrier.app` → **Open** →
+   **Open** in the dialog. (Or run `xattr -dr com.apple.quarantine AppletCarrier.app` once.)
+4. After that, launch it by double-clicking like any app.
+
+**macOS — from `AppletCarrier-<version>.dmg`:** double-click the `.dmg` to mount it, drag
+`AppletCarrier.app` into **Applications**, then do the same first-launch right-click → Open.
+
+**Windows — from `AppletCarrier-windows-<version>.zip`:**
+1. Download the zip, **right-click it → Properties → tick Unblock → OK** (before extracting).
+2. Extract the zip, open the `AppletCarrier` folder, and double-click `AppletCarrier.exe`.
+
+See the next section for why the first-launch prompts appear and the alternatives.
+
 #### Running a downloaded build (unsigned-app prompts)
 
 The builds are **unsigned**, so each OS warns on first launch of a *downloaded* build.
