@@ -23,6 +23,7 @@ kotlin {
             implementation(libs.kotlinx.serializationJson)
             implementation(libs.kotlinx.coroutinesCore)
             implementation(libs.zxing.core)
+            implementation(libs.okhttp)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

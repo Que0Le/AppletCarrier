@@ -4,6 +4,7 @@ import com.example.applet_carrier.applets.findport.FindProcessByPortApplet
 import com.example.applet_carrier.applets.hash.HashApplet
 import com.example.applet_carrier.applets.hello.HelloApplet
 import com.example.applet_carrier.applets.list.ListApplet
+import com.example.applet_carrier.applets.proxmox.ProxmoxApplet
 import com.example.applet_carrier.applets.timestamp.TimestampApplet
 import com.example.applet_carrier.applets.tokengen.TokenGeneratorApplet
 import com.example.applet_carrier.applets.wifiqr.WifiQrApplet
@@ -34,6 +35,7 @@ object CarrierBootstrap {
                 TokenGeneratorApplet(),
                 HashApplet(),
                 WifiQrApplet(),
+                ProxmoxApplet(),
             ),
         )
         val storeFactory = AppDirStoreFactory()
