@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import com.example.applet_carrier.api.Applet
 import com.example.applet_carrier.api.AppletContext
 import com.example.applet_carrier.api.AppletMetadata
-import com.example.applet_carrier.ui.prefs.ToggleRow
+import com.example.applet_carrier.ui.components.SwitchRow
 import com.example.applet_carrier.ui.theme.CarrierColors
 
 /**
@@ -74,7 +74,7 @@ class HelloApplet : Applet() {
     override fun PrefsUi() {
         val ctx = context ?: return
         var startGreen by remember { mutableStateOf(ctx.config.getBoolean("startGreen", false)) }
-        ToggleRow(
+        SwitchRow(
             label = "Start as green",
             checked = startGreen,
             onCheckedChange = {

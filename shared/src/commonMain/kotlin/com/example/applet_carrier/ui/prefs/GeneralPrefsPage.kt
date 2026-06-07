@@ -1,23 +1,18 @@
 package com.example.applet_carrier.ui.prefs
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.selection.toggleable
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.example.applet_carrier.core.AppletHost
+import com.example.applet_carrier.ui.components.SwitchRow
 import com.example.applet_carrier.ui.theme.CarrierColors
 import com.example.applet_carrier.ui.theme.CarrierFontSizes
 
@@ -33,7 +28,7 @@ fun GeneralPrefsPage(host: AppletHost) {
         var confirmOnExit by remember {
             mutableStateOf(host.hostConfig.getBoolean("confirmOnExit", true))
         }
-        ToggleRow(
+        SwitchRow(
             label = "Confirm before exit",
             checked = confirmOnExit,
             onCheckedChange = {
@@ -60,24 +55,4 @@ internal fun PrefsSectionTitle(text: String) {
         fontSize = CarrierFontSizes.title,
     )
     Spacer(Modifier.height(12.dp))
-}
-
-@Composable
-internal fun ToggleRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .height(32.dp)
-            .toggleable(value = checked, onValueChange = onCheckedChange, role = Role.Switch),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            label,
-            color = CarrierColors.TextPrimary,
-            fontSize = CarrierFontSizes.body,
-            modifier = Modifier.weight(1f),
-        )
-        // Row owns the toggle semantics; the control is presentational.
-        Switch(checked = checked, onCheckedChange = null)
-    }
 }

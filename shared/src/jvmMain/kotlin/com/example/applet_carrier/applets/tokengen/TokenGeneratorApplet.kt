@@ -10,10 +10,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -32,7 +30,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.example.applet_carrier.api.Applet
 import com.example.applet_carrier.api.AppletContext
@@ -43,6 +40,7 @@ import com.example.applet_carrier.platform.NativeDialogs
 import com.example.applet_carrier.platform.PasswordOptions
 import com.example.applet_carrier.platform.copyToClipboard
 import com.example.applet_carrier.platform.generatePassword
+import com.example.applet_carrier.ui.components.CheckboxRow
 import com.example.applet_carrier.ui.components.HorizontalSeam
 import com.example.applet_carrier.ui.components.ToolButton
 import com.example.applet_carrier.ui.theme.CarrierColors
@@ -172,11 +170,11 @@ class TokenGeneratorApplet : Applet() {
             Spacer(Modifier.height(CarrierDimens.gapXs))
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                LabeledCheckbox("A-Z", upper) { upper = it }
+                CheckboxRow("A-Z", upper) { upper = it }
                 Spacer(Modifier.width(CarrierDimens.gapMd))
-                LabeledCheckbox("0-9", digit) { digit = it }
+                CheckboxRow("0-9", digit) { digit = it }
                 Spacer(Modifier.width(CarrierDimens.gapMd))
-                LabeledCheckbox("!@#", special) { special = it }
+                CheckboxRow("!@#", special) { special = it }
             }
             Spacer(Modifier.height(CarrierDimens.gapXs))
 
@@ -274,7 +272,7 @@ private fun KeySection(
             onValueChange = { comment = it },
             singleLine = true,
             placeholder = { Text("optional, e.g. me@host") },
-            modifier = Modifier.width(280.dp),
+            modifier = Modifier.width(CarrierDimens.fieldWidth),
         )
     }
     Spacer(Modifier.height(CarrierDimens.gapXs))
@@ -288,7 +286,7 @@ private fun KeySection(
             visualTransformation = if (showPass) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             placeholder = { Text("optional — empty = unencrypted") },
-            modifier = Modifier.width(280.dp),
+            modifier = Modifier.width(CarrierDimens.fieldWidth),
         )
         Spacer(Modifier.width(CarrierDimens.gapSm))
         ToolButton(if (showPass) "Hide" else "Show", onClick = { showPass = !showPass })
@@ -321,7 +319,7 @@ private fun KeySection(
             value = filename,
             onValueChange = { filename = it },
             singleLine = true,
-            modifier = Modifier.width(280.dp),
+            modifier = Modifier.width(CarrierDimens.fieldWidth),
         )
     }
     Spacer(Modifier.height(CarrierDimens.gapSm))
@@ -377,21 +375,10 @@ private fun OutputRow(value: String, onCopy: () -> Unit) {
             readOnly = true,
             singleLine = false,  // fixed width, wraps + grows vertically
             textStyle = androidx.compose.ui.text.TextStyle(fontFamily = FontFamily.Monospace, fontSize = CarrierFontSizes.secondary),
-            modifier = Modifier.width(420.dp),
+            modifier = Modifier.width(CarrierDimens.fieldWidthWide),
         )
         Spacer(Modifier.width(CarrierDimens.gapSm))
         ToolButton("Copy", onClick = onCopy)
-    }
-}
-
-@Composable
-private fun LabeledCheckbox(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
-    Row(
-        Modifier.toggleable(value = checked, onValueChange = onChange, role = Role.Checkbox),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Checkbox(checked = checked, onCheckedChange = null)
-        Text(label, color = CarrierColors.TextPrimary, fontSize = CarrierFontSizes.secondary, fontFamily = FontFamily.Monospace)
     }
 }
 

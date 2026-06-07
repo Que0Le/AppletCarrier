@@ -13,6 +13,10 @@ object CarrierDimens {
     val radius = 6.dp
     val radiusSmall = 4.dp
 
+    // Common control widths (shared across applet forms).
+    val fieldWidth = 280.dp
+    val fieldWidthWide = 420.dp
+
     val gapXs = 4.dp
     val gapSm = 8.dp
     val gapMd = 12.dp

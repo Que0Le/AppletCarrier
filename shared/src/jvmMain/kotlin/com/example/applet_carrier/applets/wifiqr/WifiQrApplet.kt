@@ -2,26 +2,18 @@ package com.example.applet_carrier.applets.wifiqr
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,8 +26,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toComposeImageBitmap
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -48,6 +38,9 @@ import com.example.applet_carrier.platform.WifiAuth
 import com.example.applet_carrier.platform.WifiQr
 import com.example.applet_carrier.platform.buildWifiPayload
 import com.example.applet_carrier.platform.copyToClipboard
+import com.example.applet_carrier.ui.components.CheckboxRow
+import com.example.applet_carrier.ui.components.CopyableMonoRow
+import com.example.applet_carrier.ui.components.EnumDropdown
 import com.example.applet_carrier.ui.components.ToolButton
 import com.example.applet_carrier.ui.theme.CarrierColors
 import com.example.applet_carrier.ui.theme.CarrierDimens
@@ -115,7 +108,7 @@ class WifiQrApplet : Applet() {
             Spacer(Modifier.height(CarrierDimens.gapMd))
 
             LabeledField("Network (SSID)") {
-                OutlinedTextField(value = ssid, onValueChange = { ssid = it }, singleLine = true, modifier = Modifier.width(280.dp))
+                OutlinedTextField(value = ssid, onValueChange = { ssid = it }, singleLine = true, modifier = Modifier.width(CarrierDimens.fieldWidth))
             }
             Spacer(Modifier.height(CarrierDimens.gapXs))
 
@@ -127,7 +120,7 @@ class WifiQrApplet : Applet() {
                         singleLine = true,
                         enabled = auth != WifiAuth.NONE,
                         visualTransformation = if (showPass) VisualTransformation.None else PasswordVisualTransformation(),
-                        modifier = Modifier.width(280.dp),
+                        modifier = Modifier.width(CarrierDimens.fieldWidth),
                     )
                     Spacer(Modifier.width(CarrierDimens.gapSm))
                     ToolButton(if (showPass) "Hide" else "Show", enabled = auth != WifiAuth.NONE, onClick = { showPass = !showPass })
@@ -136,17 +129,11 @@ class WifiQrApplet : Applet() {
             Spacer(Modifier.height(CarrierDimens.gapXs))
 
             LabeledField("Security") {
-                AuthDropdown(auth) { auth = it }
+                EnumDropdown(auth, WifiAuth.entries, { it.label }) { auth = it }
             }
             Spacer(Modifier.height(CarrierDimens.gapXs))
 
-            Row(
-                Modifier.toggleable(value = hidden, onValueChange = { hidden = it }, role = Role.Checkbox),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Checkbox(checked = hidden, onCheckedChange = null)
-                Text("Hidden network", color = CarrierColors.TextPrimary, fontSize = CarrierFontSizes.secondary)
-            }
+            CheckboxRow("Hidden network", hidden) { hidden = it }
             Spacer(Modifier.height(CarrierDimens.gapMd))
 
             // QR preview
@@ -182,16 +169,10 @@ class WifiQrApplet : Applet() {
                 }
                 Spacer(Modifier.height(CarrierDimens.gapMd))
 
-                // Raw WI-FI: string (the requested extra)
+                // Raw WIFI: string (the requested extra)
                 Text("Raw payload", color = CarrierColors.TextMuted, fontSize = CarrierFontSizes.secondary)
                 Spacer(Modifier.height(CarrierDimens.gapXs))
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-                    SelectionContainer(Modifier.weight(1f)) {
-                        Text(payload, color = CarrierColors.TextPrimary, fontSize = CarrierFontSizes.secondary, fontFamily = FontFamily.Monospace)
-                    }
-                    Spacer(Modifier.width(CarrierDimens.gapSm))
-                    ToolButton("Copy", onClick = { copyToClipboard(payload) })
-                }
+                CopyableMonoRow(value = payload, onCopy = { copyToClipboard(payload) })
             }
 
             Spacer(Modifier.height(CarrierDimens.gapMd))
@@ -210,33 +191,5 @@ private fun LabeledField(label: String, field: @Composable () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(label, color = CarrierColors.TextMuted, fontSize = CarrierFontSizes.secondary, modifier = Modifier.width(120.dp))
         field()
-    }
-}
-
-@Composable
-private fun AuthDropdown(selected: WifiAuth, onSelect: (WifiAuth) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    Box {
-        Row(
-            Modifier
-                .clip(RoundedCornerShape(CarrierDimens.radiusSmall))
-                .background(CarrierColors.ElevatedSurface)
-                .border(CarrierDimens.borderWidth, CarrierColors.Border, RoundedCornerShape(CarrierDimens.radiusSmall))
-                .clickable { expanded = true }
-                .padding(horizontal = CarrierDimens.gapMd, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(selected.label, color = CarrierColors.TextPrimary, fontSize = CarrierFontSizes.secondary)
-            Spacer(Modifier.width(CarrierDimens.gapSm))
-            Text("▾", color = CarrierColors.TextMuted, fontSize = CarrierFontSizes.secondary)
-        }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            WifiAuth.entries.forEach { value ->
-                DropdownMenuItem(
-                    text = { Text(value.label, fontSize = CarrierFontSizes.secondary) },
-                    onClick = { onSelect(value); expanded = false },
-                )
-            }
-        }
     }
 }

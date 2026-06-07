@@ -51,6 +51,8 @@ import com.example.applet_carrier.platform.TsParse
 import com.example.applet_carrier.platform.buildFormatGroups
 import com.example.applet_carrier.platform.copyToClipboard
 import com.example.applet_carrier.platform.parseTimestamp
+import com.example.applet_carrier.ui.components.CheckboxRow
+import com.example.applet_carrier.ui.components.RadioRow
 import com.example.applet_carrier.ui.components.ToolButton
 import com.example.applet_carrier.ui.theme.CarrierColors
 import com.example.applet_carrier.ui.theme.CarrierDimens
@@ -241,7 +243,7 @@ class TimestampApplet : Applet() {
             Spacer(Modifier.height(CarrierDimens.gapXs))
             Row {
                 OffsetStyles.ALL.forEach { style ->
-                    CheckRow(style, style in offsetStyles) { on ->
+                    CheckboxRow(style, style in offsetStyles) { on ->
                         if (on) { if (style !in offsetStyles) offsetStyles.add(style) } else offsetStyles.remove(style)
                         if (offsetStyles.isEmpty()) offsetStyles.add(OffsetStyles.Z)
                         persistConfig()
@@ -364,30 +366,6 @@ private fun FormatGroupView(group: FormatGroup, onCopy: (String) -> Unit) {
             }
             Text(if (hovered) "⧉ Copy" else "⧉", color = CarrierColors.TextMuted, fontSize = CarrierFontSizes.secondary)
         }
-    }
-}
-
-@Composable
-private fun RadioRow(label: String, selected: Boolean, onClick: () -> Unit) {
-    Row(
-        Modifier.clickable(onClick = onClick),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(if (selected) "◉" else "○", color = if (selected) CarrierColors.Accent else CarrierColors.TextMuted)
-        Spacer(Modifier.width(CarrierDimens.gapXs))
-        Text(label, color = CarrierColors.TextPrimary, fontSize = CarrierFontSizes.body)
-    }
-}
-
-@Composable
-private fun CheckRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
-    Row(
-        Modifier.clickable { onChange(!checked) },
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(if (checked) "☑" else "☐", color = if (checked) CarrierColors.Accent else CarrierColors.TextMuted)
-        Spacer(Modifier.width(CarrierDimens.gapXs))
-        Text(label, color = CarrierColors.TextPrimary, fontSize = CarrierFontSizes.secondary)
     }
 }
 
